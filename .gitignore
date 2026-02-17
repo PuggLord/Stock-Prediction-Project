@@ -2,3 +2,6 @@
 *.py[cod]
 .ipynb_checkpoints/
 .DS_Store
+signals/
+downloads/pi5_package/
+downloads/pi5_package.zip

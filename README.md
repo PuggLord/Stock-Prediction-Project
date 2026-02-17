@@ -27,33 +27,17 @@ This repository is a reproducible Python data science pipeline that predicts whe
 ```text
 .
 ├── README.md
+├── PI5_QUICKSTART.md
 ├── requirements.txt
 ├── run_all.py
+├── run_signal.py
+├── bundle_pi5.py
 ├── data
-│   ├── raw
-│   │   └── nvda.csv
-│   └── processed
-│       └── features.csv
 ├── models
-│   ├── logistic_regression.joblib
-│   ├── random_forest.joblib
-│   └── train_metadata.json
 ├── notebooks
-│   ├── 01_eda.ipynb
-│   └── 02_modeling.ipynb
 ├── reports
-│   ├── figures
-│   ├── results.json
-│   └── results.md
+├── signals
 └── src
-    ├── __init__.py
-    ├── data.py
-    ├── features.py
-    ├── split.py
-    ├── train.py
-    ├── evaluate.py
-    ├── backtest.py
-    └── utils.py
 ```
 
 ## Setup
@@ -62,7 +46,7 @@ This repository is a reproducible Python data science pipeline that predicts whe
 pip install -r requirements.txt
 ```
 
-## Run End-to-End
+## Run End-to-End Research Pipeline
 
 ```bash
 python run_all.py
@@ -77,6 +61,51 @@ This single command runs:
 5. Classification evaluation + plots
 6. Trading backtest + equity curve
 7. Report generation (`reports/results.json`, `reports/results.md`)
+
+## Bot Integration (OpenClaw / Local)
+
+For low token usage, use the compact signal runner instead of sending full OHLCV or model internals to the LLM loop.
+
+```bash
+python run_signal.py --output signals/latest_signal.json
+```
+
+Optional paper step:
+
+```bash
+python run_signal.py --output signals/latest_signal.json --paper-trade
+```
+
+Key outputs:
+
+- `signals/latest_signal.json` (small bot payload)
+- `signals/paper_ledger.json` (paper account state)
+- `signals/paper_trade_last.json` (last paper action)
+
+Example payload:
+
+```json
+{
+  "ticker": "NVDA",
+  "asof": "2026-02-17",
+  "p_up_3d": 0.612345,
+  "signal": 1,
+  "size_pct": 0.1,
+  "expires": "2026-02-20"
+}
+```
+
+## Pi5 Download Bundle
+
+Create a Pi5-ready zip with only the files needed for local signal generation:
+
+```bash
+python bundle_pi5.py
+```
+
+Bundle location:
+
+- `downloads/pi5_package.zip`
 
 ## Key Outputs
 
