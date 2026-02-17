@@ -1,0 +1,35 @@
+{
+  "seed": 42,
+  "feature_columns": [
+    "log_ret_1d",
+    "ret_3d_back",
+    "ret_5d_back",
+    "ret_10d_back",
+    "sma_9",
+    "sma_21",
+    "ema_9",
+    "ema_21",
+    "ema_crossover",
+    "rsi_14",
+    "volatility_14",
+    "volatility_21",
+    "volume_mean_14",
+    "volume_z_14",
+    "macd",
+    "macd_signal"
+  ],
+  "target_column": "y_3d",
+  "train_start": "2000-02-02",
+  "train_end": "2020-11-20",
+  "test_start": "2020-11-23",
+  "test_end": "2026-02-10",
+  "class_balance": {
+    "train_positive_rate": 0.523109243697479,
+    "test_positive_rate": 0.5721925133689839,
+    "train_size": 5236,
+    "test_size": 1309
+  },
+  "lr_model_path": "C:\\Windows\\System32\\nvda_3d_project\\models\\logistic_regression.joblib",
+  "rf_model_path": "C:\\Windows\\System32\\nvda_3d_project\\models\\random_forest.joblib",
+  "test_predictions_path": "C:\\Windows\\System32\\nvda_3d_project\\reports\\test_predictions.csv"
+}

@@ -1,0 +1,278 @@
+{
+  "run_timestamp_utc": "2026-02-17T00:56:38.464775+00:00",
+  "seed": 42,
+  "symbol": "NVDA",
+  "data_summary": {
+    "raw_rows": 6569,
+    "feature_rows": 6545,
+    "feature_count": 16,
+    "raw_start": "2000-01-03",
+    "raw_end": "2026-02-13",
+    "test_start": "2020-11-23",
+    "test_end": "2026-02-10"
+  },
+  "class_balance": {
+    "train_positive_rate": 0.523109243697479,
+    "test_positive_rate": 0.5721925133689839,
+    "train_size": 5236,
+    "test_size": 1309
+  },
+  "classification": {
+    "logistic_regression": {
+      "accuracy": 0.5439266615737204,
+      "precision": 0.5676156583629893,
+      "recall": 0.8518024032042724,
+      "f1": 0.6812600106780566,
+      "confusion_matrix": [
+        [
+          74,
+          486
+        ],
+        [
+          111,
+          638
+        ]
+      ],
+      "roc_auc": 0.4942089452603471
+    },
+    "random_forest": {
+      "accuracy": 0.44690603514132926,
+      "precision": 0.7551020408163265,
+      "recall": 0.049399198931909215,
+      "f1": 0.09273182957393483,
+      "confusion_matrix": [
+        [
+          548,
+          12
+        ],
+        [
+          712,
+          37
+        ]
+      ],
+      "roc_auc": 0.516646004196071
+    },
+    "random_baseline": {
+      "n_runs": 200,
+      "accuracy_mean": 0.49839572192513365,
+      "accuracy_std": 0.014002870303269138
+    }
+  },
+  "backtest": {
+    "strategy_definition": "Daily signal strategy: position[t] = model prediction at t (0 or 1), and daily PnL uses next_day_return[t].",
+    "logistic_regression": {
+      "cumulative_return": 7.073917531592656,
+      "annualized_return": 0.4949472076014547,
+      "annualized_volatility": 0.47511745681275575,
+      "sharpe": 1.0417365232625286,
+      "max_drawdown": -0.6421934368633664,
+      "average_position": 0.8586707410236822
+    },
+    "random_forest": {
+      "cumulative_return": 0.5337052830402658,
+      "annualized_return": 0.0858199119054206,
+      "annualized_volatility": 0.06543768701695156,
+      "sharpe": 1.3114753258804677,
+      "max_drawdown": -0.049369611229219235,
+      "average_position": 0.0374331550802139
+    },
+    "buy_and_hold": {
+      "cumulative_return": 13.463470173981664,
+      "annualized_return": 0.6725070948880869,
+      "annualized_volatility": 0.5145526248834167,
+      "sharpe": 1.3069743741769042,
+      "max_drawdown": -0.6636205530533922
+    },
+    "random_baseline": {
+      "n_runs": 200,
+      "cumulative_return_mean": 3.242179318037937,
+      "cumulative_return_std": 2.8416040108702885,
+      "annualized_return_mean": 0.28277350876435314,
+      "annualized_return_std": 0.1515942962077157,
+      "annualized_volatility_mean": 0.36448510665796396,
+      "sharpe_mean": 0.7734547271356789,
+      "max_drawdown_mean": -0.5039745104844414
+    },
+    "plot_paths": {
+      "equity_curve": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\equity_curve_test.png"
+    }
+  },
+  "feature_importance": {
+    "rf_importance_top10": [
+      {
+        "feature": "ema_21",
+        "value": 0.08884037365823455
+      },
+      {
+        "feature": "volume_mean_14",
+        "value": 0.08713943335902141
+      },
+      {
+        "feature": "ema_9",
+        "value": 0.08273451196586648
+      },
+      {
+        "feature": "macd",
+        "value": 0.0781174084929758
+      },
+      {
+        "feature": "sma_9",
+        "value": 0.07811498621795085
+      },
+      {
+        "feature": "sma_21",
+        "value": 0.07627698524000573
+      },
+      {
+        "feature": "macd_signal",
+        "value": 0.07358452946116154
+      },
+      {
+        "feature": "volatility_21",
+        "value": 0.06997010888230298
+      },
+      {
+        "feature": "rsi_14",
+        "value": 0.06842285056200814
+      },
+      {
+        "feature": "volatility_14",
+        "value": 0.06671280748722719
+      }
+    ],
+    "rf_permutation_top10": [
+      {
+        "feature": "ema_21",
+        "value": 0.08477790755362369
+      },
+      {
+        "feature": "ema_9",
+        "value": 0.06798926618507561
+      },
+      {
+        "feature": "sma_9",
+        "value": 0.0562707715358544
+      },
+      {
+        "feature": "rsi_14",
+        "value": 0.017738949540996418
+      },
+      {
+        "feature": "sma_21",
+        "value": 0.017171150019689562
+      },
+      {
+        "feature": "ret_5d_back",
+        "value": 0.010882746061712556
+      },
+      {
+        "feature": "macd",
+        "value": 0.009150804497556975
+      },
+      {
+        "feature": "ret_10d_back",
+        "value": 0.0051383888982006794
+      },
+      {
+        "feature": "log_ret_1d",
+        "value": 0.0035398118452921886
+      },
+      {
+        "feature": "ret_3d_back",
+        "value": 0.0034516490792344244
+      }
+    ],
+    "lr_top_positive": [
+      {
+        "feature": "sma_9",
+        "value": 0.5309272460849643
+      },
+      {
+        "feature": "volatility_14",
+        "value": 0.23382210579910379
+      },
+      {
+        "feature": "macd_signal",
+        "value": 0.22424810192317254
+      },
+      {
+        "feature": "rsi_14",
+        "value": 0.09041591971687156
+      },
+      {
+        "feature": "ret_5d_back",
+        "value": 0.05803046147104653
+      },
+      {
+        "feature": "ema_9",
+        "value": 0.03926968305142935
+      },
+      {
+        "feature": "ema_crossover",
+        "value": 0.03474370823967628
+      },
+      {
+        "feature": "log_ret_1d",
+        "value": 0.01396273233184458
+      },
+      {
+        "feature": "ema_21",
+        "value": 0.0010810351087915276
+      },
+      {
+        "feature": "ret_3d_back",
+        "value": -0.008495653390074746
+      }
+    ],
+    "lr_top_negative": [
+      {
+        "feature": "sma_21",
+        "value": -0.5067050775884732
+      },
+      {
+        "feature": "macd",
+        "value": -0.23240006098296012
+      },
+      {
+        "feature": "ret_10d_back",
+        "value": -0.1444671857367153
+      },
+      {
+        "feature": "volatility_21",
+        "value": -0.14099637924146347
+      },
+      {
+        "feature": "volume_mean_14",
+        "value": -0.12404272404248212
+      },
+      {
+        "feature": "volume_z_14",
+        "value": -0.05962137513360162
+      },
+      {
+        "feature": "ret_3d_back",
+        "value": -0.008495653390074746
+      },
+      {
+        "feature": "ema_21",
+        "value": 0.0010810351087915276
+      },
+      {
+        "feature": "log_ret_1d",
+        "value": 0.01396273233184458
+      },
+      {
+        "feature": "ema_crossover",
+        "value": 0.03474370823967628
+      }
+    ]
+  },
+  "plots": {
+    "confusion_matrices": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\confusion_matrices.png",
+    "roc_curve": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\roc_curve.png",
+    "rf_feature_importance": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\rf_feature_importance.png",
+    "rf_permutation_importance": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\rf_permutation_importance.png",
+    "lr_coefficients": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\lr_coefficients.png",
+    "equity_curve": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\equity_curve_test.png"
+  }
+}
