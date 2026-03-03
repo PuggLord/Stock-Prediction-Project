@@ -1,166 +1,152 @@
-﻿# NVDA 3-Day Return Direction Prediction
+NVDA 3-Day Return Direction Prediction
 
-This repository is a reproducible Python data science pipeline that predicts whether **NVDA** will have a positive 3-day forward return (`y_3d`) using technical indicators, then evaluates both classification quality and strategy-level trading performance.
+Review 1 – Data Acquisition, Preparation, and Exploratory Data Analysis
 
-## Objective
+This project builds a reproducible data science workflow to predict whether NVDA (NVIDIA Corporation) will experience a positive 3-day forward return using historical market data and engineered technical indicators.
 
-- **Ticker:** NVDA (Yahoo Finance via `yfinance`)
-- **Target:** `y_3d = 1` if `(Close[t+3] / Close[t] - 1) > 0`, else `0`
-- **Models:**
-  - Logistic Regression (`StandardScaler` + `LogisticRegression`)
-  - Random Forest (`RandomForestClassifier`)
-- **Baselines:**
-  - Random 50/50 classifier baseline (Monte Carlo)
-  - Buy-and-hold return baseline
-- **Backtest strategy:** Daily signal strategy where `position[t] = prediction[t]`, and PnL uses `next_day_return[t]`
+⸻
 
-## Leakage Controls
+1. Objective
 
-- Forward target built with explicit forward shift.
-- Features use only information available up to timestamp `t`.
-- Chronological split only: earliest 80% train / latest 20% test.
-- Scaling fit on train only inside scikit-learn pipeline.
-- Rolling NaNs dropped after feature creation.
+The goal is to classify whether the 3-day forward return of NVDA is positive.
 
-## Repository Layout
+Target Definition:
 
-```text
+y_{3d} = 1 \quad \text{if} \quad \left(\frac{Close_{t+3}}{Close_t} - 1\right) > 0, \text{ else } 0
+
+This transforms a financial time series into a supervised classification problem.
+
+⸻
+
+2. Data Acquisition
+	•	Source: Yahoo Finance
+	•	Access Method: yfinance Python library
+	•	Ticker: NVDA
+	•	Frequency: Daily OHLCV
+	•	Time Range: 2015–Present
+
+The dataset includes:
+	•	Open
+	•	High
+	•	Low
+	•	Close
+	•	Adjusted Close
+	•	Volume
+
+Data is downloaded and cached locally for reproducibility.
+
+⸻
+
+3. Data Preparation
+
+Feature Engineering
+
+Technical indicators were constructed using only historical data available at time t, including:
+	•	Daily returns
+	•	Rolling moving averages
+	•	Volatility measures
+	•	Momentum-based features
+
+Forward returns were created using explicit shifting to prevent data leakage.
+
+⸻
+
+Handling Missing Values
+	•	NaN values introduced from rolling windows were removed.
+	•	Forward-shift rows with undefined targets were dropped.
+	•	The percentage of removed rows was minimal and did not distort the dataset.
+
+⸻
+
+Data Leakage Controls
+	•	Chronological train/test split (80% train, 20% test)
+	•	No shuffling
+	•	Scaling fit only on training data
+	•	All forward-looking variables explicitly shifted
+
+⸻
+
+4. Exploratory Data Analysis (EDA)
+
+EDA focused on understanding class balance, distribution shape, and feature relationships.
+
+Target Distribution
+
+The dataset is relatively balanced between positive and negative 3-day returns, reducing classification bias risk.
+
+Returns Distribution
+	•	Fat-tailed distribution
+	•	Evidence of volatility clustering
+	•	Non-normal characteristics
+
+This suggests linear models may struggle without feature transformation.
+
+⸻
+
+Correlation Analysis
+
+Correlation matrices revealed:
+	•	High multicollinearity among OHLC price columns
+	•	Weak direct linear correlation between raw volume and forward return
+	•	Stronger relationships between momentum-based indicators and target direction
+
+⸻
+
+Key Insight
+
+Momentum-based features show more predictive structure than raw trading volume.
+This supports using nonlinear models capable of capturing interaction effects.
+
+⸻
+
+5. Modeling Plan (Next Phase)
+
+Planned models:
+	•	Logistic Regression (baseline linear classifier)
+	•	Random Forest (nonlinear ensemble model)
+
+Performance will be evaluated using:
+	•	Accuracy
+	•	F1 Score
+	•	ROC Curve
+	•	Strategy-level cumulative returns
+
+⸻
+
+6. Reproducibility
+
+To run the full pipeline:
+
+pip install -r requirements.txt
+python run_all.py
+
+All results, plots, and metrics are automatically generated in the reports/ directory.
+
+⸻
+
+Repository Structure
+
 .
 ├── README.md
-├── PI5_QUICKSTART.md
 ├── requirements.txt
 ├── run_all.py
-├── run_signal.py
-├── bundle_pi5.py
-├── data
-├── models
-├── notebooks
-├── reports
-├── signals
-└── src
-```
+├── data/
+├── models/
+├── notebooks/
+├── reports/
+└── src/
 
-## Setup
 
-```bash
-pip install -r requirements.txt
-```
+⸻
 
-## Run End-to-End Research Pipeline
+Summary
 
-```bash
-python run_all.py
-```
+This review establishes:
+	•	Clean, leakage-controlled dataset
+	•	Engineered features ready for modeling
+	•	Documented EDA findings
+	•	Justified modeling direction
 
-This single command runs:
+The project is prepared to proceed to full model evaluation and backtesting.
 
-1. Data download/cache
-2. Feature engineering
-3. Time-based split
-4. Model training
-5. Classification evaluation + plots
-6. Trading backtest + equity curve
-7. Report generation (`reports/results.json`, `reports/results.md`)
-
-## Bot Integration (OpenClaw / Local)
-
-For low token usage, use the compact signal runner instead of sending full OHLCV or model internals to the LLM loop.
-
-```bash
-python run_signal.py --output signals/latest_signal.json
-```
-
-Optional paper step:
-
-```bash
-python run_signal.py --output signals/latest_signal.json --paper-trade
-```
-
-Key outputs:
-
-- `signals/latest_signal.json` (small bot payload)
-- `signals/paper_ledger.json` (paper account state)
-- `signals/paper_trade_last.json` (last paper action)
-
-Example payload:
-
-```json
-{
-  "ticker": "NVDA",
-  "asof": "2026-02-17",
-  "p_up_3d": 0.612345,
-  "signal": 1,
-  "size_pct": 0.1,
-  "expires": "2026-02-20"
-}
-```
-
-## Pi5 Download Bundle
-
-Create a Pi5-ready zip with only the files needed for local signal generation:
-
-```bash
-python bundle_pi5.py
-```
-
-Bundle location:
-
-- `downloads/pi5_package.zip`
-
-## Key Outputs
-
-- **Raw data cache:** `data/raw/nvda.csv`
-- **Processed features:** `data/processed/features.csv`
-- **Model artifacts:** `models/*.joblib`
-- **Plots:** `reports/figures/`
-- **Machine-readable summary:** `reports/results.json`
-- **Human-readable summary:** `reports/results.md`
-
-## Latest Run Snapshot
-
-From the most recent local run (`python run_all.py`) on the current cached Yahoo dataset:
-
-- **Test period:** 2020-11-23 to 2026-02-10
-- **F1 score:** Logistic Regression = `0.681`, Random Forest = `0.093`
-- **Random baseline accuracy (200 runs):** `0.498 +/- 0.014`
-- **Strategy cumulative return (test period):**
-  - Logistic Regression strategy: `707.39%`
-  - Random Forest strategy: `53.37%`
-  - Buy-and-hold: `1346.35%`
-
-For full metrics, feature importance details, and plots, see:
-
-- `reports/results.md`
-- `reports/results.json`
-- `reports/figures/`
-
-## Example Graphs
-
-The figures below are examples generated by the current pipeline run. Running `python run_all.py` will regenerate them with your latest data window.
-
-### Equity Curve (Strategies vs Buy-and-Hold)
-
-![Equity Curve](reports/figures/equity_curve_test.png)
-
-### ROC Curve (Test Set)
-
-![ROC Curve](reports/figures/roc_curve.png)
-
-### Confusion Matrices
-
-![Confusion Matrices](reports/figures/confusion_matrices.png)
-
-### Random Forest Feature Importance
-
-![RF Feature Importance](reports/figures/rf_feature_importance.png)
-
-## Notes
-
-- Results depend on the latest available Yahoo Finance data at run time.
-- Random seeds are fixed for reproducibility.
-- You can also run modules directly:
-  - `python -m src.data`
-  - `python -m src.features`
-  - `python -m src.train`
-  - `python -m src.evaluate`
-  - `python -m src.backtest`
+⸻
