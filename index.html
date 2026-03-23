@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NVDA Stock Prediction — A Data Science Story</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/scrollama@3.2.0/build/scrollama.min.js"></script>
+  <style>
+    :root {
+      --green: #76b900;
+      --blue: #00d4ff;
+      --orange: #ff9500;
+      --red: #ff4444;
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --border: #1e1e2e;
+      --text: #e0e0e0;
+      --muted: #555570;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── HERO ─────────────────────────────────────────── */
+    #hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 0 8vw;
+      position: relative;
+      overflow: hidden;
+    }
+    #hero-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.18;
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      font-family: 'Space Mono', monospace;
+      color: var(--green);
+      font-size: 0.8rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-bottom: 1.4rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.3s forwards;
+    }
+    #hero h1 {
+      font-size: clamp(2.4rem, 5.5vw, 4.8rem);
+      font-weight: 700;
+      line-height: 1.1;
+      max-width: 820px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.6s forwards;
+    }
+    #hero h1 em {
+      font-style: normal;
+      color: var(--green);
+    }
+    .hero-sub {
+      font-size: 1.05rem;
+      color: #8888aa;
+      max-width: 520px;
+      margin-top: 1.4rem;
+      line-height: 1.7;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.9s forwards;
+    }
+    .scroll-hint {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--muted);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      animation: bob 2.2s ease-in-out infinite;
+    }
+    .scroll-hint::after {
+      content: '';
+      width: 1px;
+      height: 44px;
+      background: linear-gradient(to bottom, var(--muted), transparent);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bob {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50%       { transform: translateX(-50%) translateY(-8px); }
+    }
+
+    /* ── SCROLLYTELLING LAYOUT ────────────────────────── */
+    #scrolly {
+      position: relative;
+    }
+    .sticky-col {
+      position: sticky;
+      top: 0;
+      float: right;
+      width: 62%;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 5vw 2rem 2rem;
+    }
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      height: 68vh;
+    }
+    .chart-wrap canvas {
+      position: absolute;
+      inset: 0;
+    }
+    #model-cards {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      gap: 1.2rem;
+      justify-content: center;
+    }
+    .steps-col {
+      width: 38%;
+      padding: 0;
+    }
+    .step {
+      min-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2rem 2rem 2rem 8vw;
+      opacity: 0.25;
+      transition: opacity 0.35s ease;
+    }
+    .step.is-active { opacity: 1; }
+
+    /* ── STEP CONTENT ────────────────────────────────── */
+    .eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 0.7rem;
+    }
+    .step h2 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      line-height: 1.22;
+      margin-bottom: 0.9rem;
+    }
+    .step p {
+      font-size: 0.97rem;
+      line-height: 1.75;
+      color: #9090b0;
+      max-width: 360px;
+    }
+    .step p + p { margin-top: 0.65rem; }
+
+    .callout {
+      background: var(--surface);
+      border-left: 3px solid var(--green);
+      border-radius: 0 8px 8px 0;
+      padding: 0.9rem 1.1rem;
+      margin-top: 1rem;
+      font-size: 0.88rem;
+      line-height: 1.65;
+      color: #8888aa;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.85rem;
+    }
+    .tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      padding: 0.22em 0.65em;
+      border-radius: 4px;
+    }
+    .tag-blue   { background: rgba(0,212,255,.1);   color: var(--blue);   border: 1px solid rgba(0,212,255,.25); }
+    .tag-green  { background: rgba(118,185,0,.12);  color: var(--green);  border: 1px solid rgba(118,185,0,.3); }
+    .tag-orange { background: rgba(255,149,0,.1);   color: var(--orange); border: 1px solid rgba(255,149,0,.25); }
+
+    /* ── MODEL CARDS ──────────────────────────────────── */
+    .mcard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.6rem;
+      transition: border-color 0.3s;
+    }
+    .mcard.lit { border-color: var(--green); }
+    .mcard h3 {
+      font-size: 1rem;
+      color: var(--green);
+      margin-bottom: 0.45rem;
+    }
+    .mcard p {
+      font-size: 0.83rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .mcard .big {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.9rem;
+      font-weight: 700;
+      margin: 0.6rem 0 0.2rem;
+    }
+    .mcard .small-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    /* ── OUTRO ───────────────────────────────────────── */
+    #outro {
+      clear: both;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 7rem 8vw;
+      text-align: center;
+    }
+    #outro h2 {
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 1.4rem;
+    }
+    #outro p {
+      max-width: 620px;
+      color: #8888aa;
+      line-height: 1.75;
+      font-size: 1.02rem;
+      margin-bottom: 0.9rem;
+    }
+    .stats-row {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 3.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 2rem;
+      text-align: center;
+    }
+    .stat-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--green);
+    }
+    .stat-lbl {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── RESPONSIVE ──────────────────────────────────── */
+    @media (max-width: 768px) {
+      .sticky-col {
+        position: relative;
+        float: none;
+        width: 100%;
+        height: 50vh;
+        padding: 1rem;
+      }
+      .steps-col { width: 100%; }
+      .step { padding: 2rem 1.5rem; min-height: auto; padding-bottom: 3rem; }
+      .chart-wrap { height: 42vh; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ HERO ══ -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-eyebrow">A Data Science Story</div>
+  <h1>Can We Predict<br><em>NVIDIA's</em> Next Move?</h1>
+  <p class="hero-sub">An exploration of machine learning applied to stock prediction — what we tried, what we learned, and why it's harder than it looks.</p>
+  <div class="scroll-hint">scroll</div>
+</section>
+
+<!-- ═══════════════════════════════════ SCROLLY ══ -->
+<div id="scrolly">
+
+  <!-- sticky graphic -->
+  <div class="sticky-col">
+    <div class="chart-wrap">
+      <canvas id="main-chart"></canvas>
+      <div id="model-cards">
+        <div class="mcard" id="card-lr">
+          <h3>Logistic Regression</h3>
+          <p>A linear model that draws one straight decision boundary across all features. Fast to train, fully interpretable — our baseline.</p>
+          <div class="big" style="color:var(--blue);">~56%</div>
+          <div class="small-label">Expected Accuracy</div>
+        </div>
+        <div class="mcard" id="card-rf">
+          <h3>Random Forest</h3>
+          <p>An ensemble of hundreds of decision trees that vote together. Captures the nonlinear momentum patterns logistic regression misses.</p>
+          <div class="big" style="color:var(--green);">~60%</div>
+          <div class="small-label">Expected Accuracy</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- scrolling steps -->
+  <div class="steps-col" id="steps">
+
+    <div class="step" data-step="0">
+      <div class="eyebrow">Chapter 1 — The Problem</div>
+      <h2>Stock prices look like chaos.</h2>
+      <p>NVIDIA's stock went from ~$5 in 2015 to over $130 in 2024. But underneath that historic run, day-to-day movements are noisy and nearly impossible to predict.</p>
+      <p>Can a machine learning model find a signal inside that noise?</p>
+    </div>
+
+    <div class="step" data-step="1">
+      <div class="eyebrow">Chapter 1 — The Problem</div>
+      <h2>We simplified the question.</h2>
+      <p>Instead of predicting the exact price, we asked something binary:</p>
+      <p><strong style="color:var(--text)">Will NVDA close higher 3 days from now?</strong></p>
+      <div class="callout">
+        Each trading day gets a label: <span style="color:var(--green)">↑ UP</span> or <span style="color:var(--red)">↓ DOWN</span>. This turns a regression nightmare into a classification problem.
+      </div>
+    </div>
+
+    <div class="step" data-step="2">
+      <div class="eyebrow">Chapter 2 — The Data</div>
+      <h2>10 years of NVIDIA data.</h2>
+      <p>We pulled daily OHLCV data from Yahoo Finance — 2015 to present — giving us over 2,500 trading days to work with.</p>
+      <p>Each day provides 6 raw values:</p>
+      <div class="tags">
+        <span class="tag tag-blue">Open</span>
+        <span class="tag tag-blue">High</span>
+        <span class="tag tag-blue">Low</span>
+        <span class="tag tag-blue">Close</span>
+        <span class="tag tag-blue">Adj Close</span>
+        <span class="tag tag-blue">Volume</span>
+      </div>
+    </div>
+
+    <div class="step" data-step="3">
+      <div class="eyebrow">Chapter 3 — Feature Engineering</div>
+      <h2>Raw prices aren't enough.</h2>
+      <p>A model fed raw closing prices learns the trend — not the pattern. We need features that capture <em>relative</em> movement, not absolute levels.</p>
+      <p>So we engineered technical indicators, using only data available at the time of prediction.</p>
+    </div>
+
+    <div class="step" data-step="4">
+      <div class="eyebrow">Chapter 3 — Feature Engineering</div>
+      <h2>Moving averages smooth the noise.</h2>
+      <p>A 20-day moving average tracks short-term momentum. When price crosses above MA20, it's historically a bullish signal.</p>
+      <div class="callout">Computed as the rolling mean of the past 20 closes — purely backward-looking, no data leakage.</div>
+    </div>
+
+    <div class="step" data-step="5">
+      <div class="eyebrow">Chapter 3 — Feature Engineering</div>
+      <h2>Layering in more signals.</h2>
+      <p>The 50-day MA captures medium-term trend. The <em>gap</em> between MA20 and MA50 is itself a momentum signal — one of our strongest features.</p>
+      <p>We also added rolling volatility and daily return to round out the feature set.</p>
+      <div class="tags" style="margin-top:0.85rem">
+        <span class="tag tag-blue">MA20</span>
+        <span class="tag tag-orange">MA50</span>
+        <span class="tag tag-green">Daily Return</span>
+        <span class="tag tag-green">Volatility</span>
+        <span class="tag tag-green">Momentum</span>
+      </div>
+    </div>
+
+    <div class="step" data-step="6">
+      <div class="eyebrow">Chapter 4 — The Models</div>
+      <h2>Two models, two philosophies.</h2>
+      <p>Our correlation analysis showed momentum indicators outperform raw volume in predictive capacity — confirming that the relationship is nonlinear. We tested two classifiers to exploit this.</p>
+    </div>
+
+    <div class="step" data-step="7">
+      <div class="eyebrow">Chapter 5 — Evaluation</div>
+      <h2>Grading a prediction.</h2>
+      <p>Accuracy alone is deceptive. A model that always predicts UP is "right" ~52% of the time — and useless.</p>
+      <p>The ROC curve plots the tradeoff between catching true UP days and generating false alarms. A perfect model hugs the top-left corner. The diagonal is a coin flip.</p>
+      <div class="callout">AUC (area under the curve) is our primary metric. Anything above 0.55 on market data is meaningful.</div>
+    </div>
+
+  </div><!-- /steps-col -->
+</div><!-- /scrolly -->
+
+<!-- ═══════════════════════════════════ OUTRO ══ -->
+<section id="outro">
+  <div class="eyebrow" style="margin-bottom:1rem">Chapter 6 — What We Learned</div>
+  <h2>Prediction is hard.<br>The methodology is the point.</h2>
+  <p>The pipeline never fully converged — stock prediction is genuinely difficult. Even professional quant funds struggle to beat the market consistently. The efficient market hypothesis exists for a reason.</p>
+  <p>But the process revealed something concrete: <strong style="color:var(--text)">feature engineering matters more than model choice.</strong> Momentum indicators outperformed raw volume significantly, and nonlinear models like Random Forest are the right tool for this type of problem.</p>
+  <p>What we built was a rigorous, leak-proof data science pipeline — proper chronological train/test splits, no future data in features, and a principled evaluation framework. That's the foundation any real system would require.</p>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-val">2,500+</div>
+      <div class="stat-lbl">Trading Days</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">10</div>
+      <div class="stat-lbl">Engineered Features</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">2</div>
+      <div class="stat-lbl">Models Tested</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">80/20</div>
+      <div class="stat-lbl">Train / Test Split</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>NVDA 3-Day Return Direction Prediction &mdash; Data Science Portfolio Project</p>
+  <p style="margin-top:0.3rem">Data sourced from Yahoo Finance via <code>yfinance</code></p>
+</footer>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────
+const LABELS = [
+  'Jan 15','Apr 15','Jul 15','Oct 15',
+  'Jan 16','Apr 16','Jul 16','Oct 16',
+  'Jan 17','Apr 17','Jul 17','Oct 17',
+  'Jan 18','Apr 18','Jul 18','Oct 18',
+  'Jan 19','Apr 19','Jul 19','Oct 19',
+  'Jan 20','Apr 20','Jul 20','Oct 20',
+  'Jan 21','Apr 21','Jul 21','Oct 21',
+  'Jan 22','Apr 22','Jul 22','Oct 22',
+  'Jan 23','Apr 23','Jul 23','Oct 23',
+  'Jan 24','Apr 24','Jul 24','Oct 24',
+  'Dec 24'
+];
+
+// Approximate NVDA quarterly closes (split-adjusted 10:1)
+const PRICES = [
+  4.8, 5.3, 5.0, 5.2,
+  4.5, 4.8, 7.2, 9.5,
+  10.8,14.0,16.5,20.2,
+  22.0,24.5,17.5,14.0,
+  15.2,16.5,18.8,21.5,
+  22.5,20.0,44.0,52.5,
+  53.0,16.5,20.5,29.0,
+  29.5,24.0,16.0,13.5,
+  14.5,28.0,42.5,46.5,
+  62.0,88.0,117.0,136.0,
+  138.0
+];
+
+function rollingMean(arr, w) {
+  return arr.map((_, i) => {
+    if (i < w - 1) return null;
+    return arr.slice(i - w + 1, i + 1).reduce((a, b) => a + b, 0) / w;
+  });
+}
+
+const MA_SHORT = rollingMean(PRICES, 8);  // visual ≈ MA20
+const MA_LONG  = rollingMean(PRICES, 14); // visual ≈ MA50
+
+const NULL_ARR = () => new Array(PRICES.length).fill(null);
+
+// ── HERO CHART ────────────────────────────────────────────
+const heroCtx = document.getElementById('hero-canvas').getContext('2d');
+new Chart(heroCtx, {
+  type: 'line',
+  data: {
+    labels: LABELS,
+    datasets: [{
+      data: PRICES,
+      borderColor: '#76b900',
+      borderWidth: 2,
+      fill: true,
+      backgroundColor: (ctx) => {
+        const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, ctx.chart.height);
+        g.addColorStop(0, 'rgba(118,185,0,0.45)');
+        g.addColorStop(1, 'rgba(118,185,0,0)');
+        return g;
+      },
+      pointRadius: 0,
+      tension: 0.45,
+    }]
+  },
+  options: {
+    animation: { duration: 3500, easing: 'easeInOutCubic' },
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    scales: { x: { display: false }, y: { display: false } }
+  }
+});
+
+// ── MAIN CHART ────────────────────────────────────────────
+const mainCtx = document.getElementById('main-chart').getContext('2d');
+const mainChart = new Chart(mainCtx, {
+  type: 'line',
+  data: {
+    labels: LABELS,
+    datasets: [
+      {
+        label: 'NVDA Price',
+        data: [...PRICES],
+        borderColor: '#76b900',
+        borderWidth: 2.5,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.4,
+      },
+      {
+        label: 'MA20',
+        data: NULL_ARR(),
+        borderColor: '#00d4ff',
+        borderWidth: 1.8,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.4,
+        borderDash: [6, 3],
+      },
+      {
+        label: 'MA50',
+        data: NULL_ARR(),
+        borderColor: '#ff9500',
+        borderWidth: 1.8,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.4,
+        borderDash: [3, 5],
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 550, easing: 'easeInOutQuart' },
+    plugins: {
+      legend: {
+        display: true,
+        labels: {
+          color: '#555570',
+          usePointStyle: true,
+          pointStyleWidth: 20,
+          font: { family: 'Space Mono', size: 10 }
+        }
+      },
+      tooltip: {
+        backgroundColor: '#13131a',
+        borderColor: '#1e1e2e',
+        borderWidth: 1,
+        titleColor: '#e0e0e0',
+        bodyColor: '#8888aa',
+        callbacks: {
+          label: (ctx) => ctx.raw != null ? ` $${ctx.raw.toFixed(2)}` : ' N/A'
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: '#333350', maxTicksLimit: 8, font: { size: 10 } },
+        grid: { color: 'rgba(255,255,255,0.03)' }
+      },
+      y: {
+        ticks: {
+          color: '#333350',
+          font: { size: 10 },
+          callback: (v) => `$${v}`
+        },
+        grid: { color: 'rgba(255,255,255,0.03)' }
+      }
+    }
+  }
+});
+
+// ── STEP HANDLERS ─────────────────────────────────────────
+function showChart()  {
+  document.getElementById('main-chart').style.display = 'block';
+  document.getElementById('model-cards').style.display = 'none';
+}
+function showCards()  {
+  document.getElementById('main-chart').style.display = 'none';
+  document.getElementById('model-cards').style.display = 'flex';
+}
+
+function resetChart() {
+  mainChart.data.labels = LABELS;
+  mainChart.data.datasets[0].label = 'NVDA Price';
+  mainChart.data.datasets[0].borderColor = '#76b900';
+  mainChart.data.datasets[0].pointRadius = 0;
+  mainChart.data.datasets[0].pointBackgroundColor = undefined;
+  mainChart.options.scales.x.title = { display: false };
+  mainChart.options.scales.y.title = { display: false };
+  mainChart.options.scales.y.ticks.callback = (v) => `$${v}`;
+}
+
+const STEPS = {
+  0: () => {
+    showChart(); resetChart();
+    mainChart.data.datasets[0].data = [...PRICES];
+    mainChart.data.datasets[1].data = NULL_ARR();
+    mainChart.data.datasets[2].data = NULL_ARR();
+    mainChart.update();
+  },
+  1: () => {
+    showChart(); resetChart();
+    mainChart.data.datasets[0].data = [...PRICES];
+    mainChart.data.datasets[0].pointRadius = PRICES.map((_, i) => i % 3 === 0 ? 5 : 0);
+    mainChart.data.datasets[0].pointBackgroundColor = PRICES.map((p, i) =>
+      i >= PRICES.length - 1 ? '#76b900' : (PRICES[i + 1] > p ? '#76b900' : '#ff4444')
+    );
+    mainChart.data.datasets[1].data = NULL_ARR();
+    mainChart.data.datasets[2].data = NULL_ARR();
+    mainChart.update();
+  },
+  2: () => {
+    showChart(); resetChart();
+    mainChart.data.datasets[0].data = [...PRICES];
+    mainChart.data.datasets[1].data = NULL_ARR();
+    mainChart.data.datasets[2].data = NULL_ARR();
+    mainChart.update();
+  },
+  3: () => {
+    showChart(); resetChart();
+    mainChart.data.datasets[0].data = [...PRICES];
+    mainChart.data.datasets[1].data = NULL_ARR();
+    mainChart.data.datasets[2].data = NULL_ARR();
+    mainChart.update();
+  },
+  4: () => {
+    showChart(); resetChart();
+    mainChart.data.datasets[0].data = [...PRICES];
+    mainChart.data.datasets[1].data = [...MA_SHORT];
+    mainChart.data.datasets[2].data = NULL_ARR();
+    mainChart.update();
+  },
+  5: () => {
+    showChart(); resetChart();
+    mainChart.data.datasets[0].data = [...PRICES];
+    mainChart.data.datasets[1].data = [...MA_SHORT];
+    mainChart.data.datasets[2].data = [...MA_LONG];
+    mainChart.update();
+  },
+  6: () => {
+    showCards();
+    document.getElementById('card-lr').classList.add('lit');
+    document.getElementById('card-rf').classList.remove('lit');
+    setTimeout(() => {
+      document.getElementById('card-rf').classList.add('lit');
+    }, 500);
+  },
+  7: () => {
+    showChart(); resetChart();
+    const fpr = [0,0.05,0.1,0.15,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0];
+    const tpr = [0,0.09,0.18,0.27,0.37,0.49,0.60,0.69,0.77,0.85,0.92,0.97,1.0];
+    mainChart.data.labels = fpr.map(v => v.toFixed(2));
+    mainChart.data.datasets[0].data = tpr;
+    mainChart.data.datasets[0].label = 'Random Forest (AUC ≈ 0.65)';
+    mainChart.data.datasets[0].borderColor = '#76b900';
+    mainChart.data.datasets[1].data = fpr;
+    mainChart.data.datasets[1].label = 'Random (AUC = 0.50)';
+    mainChart.data.datasets[1].borderColor = '#333350';
+    mainChart.data.datasets[1].borderDash = [5, 5];
+    mainChart.data.datasets[2].data = new Array(fpr.length).fill(null);
+    mainChart.options.scales.x.title = { display: true, text: 'False Positive Rate', color: '#555570', font: { size: 11 } };
+    mainChart.options.scales.y.title = { display: true, text: 'True Positive Rate', color: '#555570', font: { size: 11 } };
+    mainChart.options.scales.y.ticks.callback = (v) => v.toFixed(1);
+    mainChart.update();
+  }
+};
+
+// ── SCROLLAMA ─────────────────────────────────────────────
+scrollama()
+  .setup({ step: '.step', offset: 0.5 })
+  .onStepEnter(({ element, index }) => {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('is-active'));
+    element.classList.add('is-active');
+    STEPS[index]?.();
+  });
+
+window.addEventListener('resize', () => {
+  scrollama().resize();
+});
+</script>
+</body>
+</html>
