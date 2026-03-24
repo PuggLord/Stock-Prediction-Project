@@ -136,17 +136,4 @@ Repository Structure
 ├── reports/
 └── src/
 
-
-⸻
-
-Summary
-
-This review establishes:
-	•	Clean, leakage-controlled dataset
-	•	Engineered features ready for modeling
-	•	Documented EDA findings
-	•	Justified modeling direction
-
-The project is prepared to proceed to full model evaluation and backtesting.
-
 ⸻
