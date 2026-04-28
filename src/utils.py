@@ -69,3 +69,11 @@ def read_json(path: Path) -> dict[str, Any]:
 def format_pct(value: float) -> str:
     """Format decimal value as percentage."""
     return f"{value * 100:.2f}%"
+
+
+def repo_relative_path(path: Path) -> str:
+    """Render a path as a repo-relative POSIX string for stable cross-machine reports."""
+    try:
+        return path.resolve().relative_to(PROJECT_ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()

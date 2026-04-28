@@ -94,7 +94,7 @@
       "max_drawdown_mean": -0.5039745104844414
     },
     "plot_paths": {
-      "equity_curve": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\equity_curve_test.png"
+      "equity_curve": "reports/figures/equity_curve_test.png"
     }
   },
   "feature_importance": {
@@ -268,11 +268,11 @@
     ]
   },
   "plots": {
-    "confusion_matrices": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\confusion_matrices.png",
-    "roc_curve": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\roc_curve.png",
-    "rf_feature_importance": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\rf_feature_importance.png",
-    "rf_permutation_importance": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\rf_permutation_importance.png",
-    "lr_coefficients": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\lr_coefficients.png",
-    "equity_curve": "C:\\Windows\\System32\\nvda_3d_project\\reports\\figures\\equity_curve_test.png"
+    "confusion_matrices": "reports/figures/confusion_matrices.png",
+    "roc_curve": "reports/figures/roc_curve.png",
+    "rf_feature_importance": "reports/figures/rf_feature_importance.png",
+    "rf_permutation_importance": "reports/figures/rf_permutation_importance.png",
+    "lr_coefficients": "reports/figures/lr_coefficients.png",
+    "equity_curve": "reports/figures/equity_curve_test.png"
   }
 }

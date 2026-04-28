@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from src.utils import FIGURES_DIR, SEED, ensure_directories
+from src.utils import FIGURES_DIR, SEED, ensure_directories, repo_relative_path
 
 EQUITY_CURVE_PATH = FIGURES_DIR / "equity_curve_test.png"
 
@@ -173,7 +173,7 @@ def backtest_models(
         "buy_and_hold": buy_hold_metrics,
         "random_baseline": random_baseline,
         "plot_paths": {
-            "equity_curve": str(EQUITY_CURVE_PATH),
+            "equity_curve": repo_relative_path(EQUITY_CURVE_PATH),
         },
     }
 

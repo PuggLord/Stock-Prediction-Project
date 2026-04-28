@@ -20,7 +20,7 @@ from sklearn.metrics import (
 from src.features import get_feature_columns, load_feature_data
 from src.split import time_train_test_split
 from src.train import load_trained_models
-from src.utils import FIGURES_DIR, SEED, ensure_directories, set_global_seed
+from src.utils import FIGURES_DIR, SEED, ensure_directories, repo_relative_path, set_global_seed
 
 CONFUSION_PLOT_PATH = FIGURES_DIR / "confusion_matrices.png"
 ROC_PLOT_PATH = FIGURES_DIR / "roc_curve.png"
@@ -275,11 +275,11 @@ def evaluate_models(
         "feature_importance": feature_importance,
         "predictions": predictions,
         "plot_paths": {
-            "confusion_matrices": str(CONFUSION_PLOT_PATH),
-            "roc_curve": str(ROC_PLOT_PATH),
-            "rf_feature_importance": str(RF_IMPORTANCE_PLOT_PATH),
-            "rf_permutation_importance": str(PERM_IMPORTANCE_PLOT_PATH),
-            "lr_coefficients": str(LR_COEF_PLOT_PATH),
+            "confusion_matrices": repo_relative_path(CONFUSION_PLOT_PATH),
+            "roc_curve": repo_relative_path(ROC_PLOT_PATH),
+            "rf_feature_importance": repo_relative_path(RF_IMPORTANCE_PLOT_PATH),
+            "rf_permutation_importance": repo_relative_path(PERM_IMPORTANCE_PLOT_PATH),
+            "lr_coefficients": repo_relative_path(LR_COEF_PLOT_PATH),
         },
     }
 

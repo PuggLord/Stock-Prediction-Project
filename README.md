@@ -1,8 +1,22 @@
 NVDA 3-Day Return Direction Prediction
 
-Review 1 – Data Acquisition, Preparation, and Exploratory Data Analysis
+End-to-end data science workflow: data acquisition, EDA, modeling, and backtesting.
 
-This project builds a reproducible data science workflow to predict whether NVDA (NVIDIA Corporation) will experience a positive 3-day forward return using historical market data and engineered technical indicators.
+This project builds a reproducible pipeline to predict whether NVDA (NVIDIA Corporation) will experience a positive 3-day forward return using historical market data and engineered technical indicators. Two classifiers (Logistic Regression and Random Forest) are trained, evaluated, and run through a daily-signal backtest against a buy-and-hold benchmark and a 200-run random baseline.
+
+Headline Results (Test Set, Chronological Split)
+
+| Strategy | Cumulative Return | Sharpe (rf=0) | Max Drawdown |
+| --- | ---: | ---: | ---: |
+| Logistic Regression | 707.39% | 1.042 | -64.22% |
+| Random Forest | 53.37% | 1.311 | -4.94% |
+| Buy and Hold | 1346.35% | 1.307 | -66.36% |
+| Random Baseline (200 runs) | 324.22% ± 284.16% | 0.773 | -50.40% |
+
+Key takeaways:
+  • Random Forest delivers the best risk-adjusted return (Sharpe 1.311) with a -4.94% max drawdown by trading rarely (≈3.7% of days) but with high precision (0.755).
+  • Logistic Regression captures most up-moves (recall 0.852) and produces a high cumulative return, but its ROC AUC (0.494) shows weak ranking power — its profit comes largely from class imbalance and a long bias during a strong bull period.
+  • Buy-and-hold remains the cumulative-return benchmark; both strategies should be judged against it on risk-adjusted terms, not raw return.
 
 ⸻
 
@@ -99,17 +113,31 @@ This supports using nonlinear models capable of capturing interaction effects.
 
 ⸻
 
-5. Modeling Plan (Next Phase)
+5. Modeling and Evaluation
 
-Planned models:
-	•	Logistic Regression (baseline linear classifier)
-	•	Random Forest (nonlinear ensemble model)
+Two classifiers were trained on the chronological 80% train split and evaluated on the held-out 20% test split (1,309 days, test period 2020-11-23 to 2026-02-10).
 
-Performance will be evaluated using:
-	•	Accuracy
-	•	F1 Score
-	•	ROC Curve
-	•	Strategy-level cumulative returns
+Classification Metrics (Test Set)
+
+| Model | Accuracy | Precision | Recall | F1 | ROC AUC |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Logistic Regression | 0.544 | 0.568 | 0.852 | 0.681 | 0.494 |
+| Random Forest | 0.447 | 0.755 | 0.049 | 0.093 | 0.517 |
+| Random Baseline (200 runs) | 0.498 ± 0.014 | – | – | – | – |
+
+Trading Simulation
+
+A daily-signal strategy (`position[t] = prediction[t]`, PnL via `next_day_return[t]`) is run on the test set against buy-and-hold and a 200-run random baseline. See the Headline Results table above and `reports/results.md` for the full backtest summary.
+
+Feature Importance Highlights
+	•	Random Forest (impurity & permutation): `ema_21` ranks #1 in both views, followed by `ema_9`, `sma_9`.
+	•	Logistic Regression (scaled coefficients): strongest positive `sma_9` (+0.531), strongest negative `sma_21` (-0.507).
+
+Artifacts (committed under `reports/`)
+	•	`results.md` — full metrics report
+	•	`results.json` — machine-readable run summary
+	•	`figures/` — confusion matrices, ROC curve, equity curve, feature-importance plots
+	•	`test_predictions.csv` — per-day test-set predictions
 
 ⸻
 
